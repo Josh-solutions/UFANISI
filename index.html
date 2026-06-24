@@ -10,17 +10,17 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
-            margin: 0;
-            padding: 0;
+            margin: 2;
+            padding: 2;
             box-sizing: border-box;
         }
         body {
-            background: linear-gradient(135deg, #e9f7e1 0%, #f5eef8 100%);
+            background: linear-gradient(135deg, #4608f1 0%, #0aee43 100%);
             font-family: 'Segoe UI', 'Poppins', Roboto, sans-serif;
         }
         /* Light green, white & light purple theme */
         .navbar, .card, .footer-custom {
-            background-color: #ffffff !important;
+            background-color: #67a0c2ec !important;
         }
         .navbar {
             box-shadow: 0 4px 12px rgba(98, 0, 128, 0.05);
@@ -39,24 +39,25 @@
             background: #1b5e20;
         }
         .btn-outline-purple {
-            border-color: #c084fc;
-            color: #6b21a5;
+            border-color: #f30a0a;
+            color: #240808de;
+             background: #0ae41ccb;
         }
         .btn-outline-purple:hover {
             background-color: #f3e8ff;
             border-color: #a855f7;
         }
         .bg-soft-green {
-            background-color: #eaf7ea;
+            background-color: #95e639;
         }
         .badge-admin {
-            background: #9333ea;
+            background: #0f0e0fd8;
         }
         .badge-farmer {
             background: #2e7d32;
         }
         .badge-buyer {
-            background: #0284c7;
+            background: #0ba3f0;
         }
         .price-card {
             border-left: 5px solid #c084fc;
@@ -66,9 +67,9 @@
             transform: translateY(-5px);
         }
         footer {
-            background: #1e2a1e;
-            color: #ddd;
-            border-top: 1px solid #d9b8ff;
+            background: #ecea53cb;
+            color: lch(6.19% 0.78 144.5 / 0.849);
+            border-top: 8px solid #7917e9;
         }
         .center-container {
             max-width: 1400px;
@@ -83,16 +84,16 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
         }
         .tab-active {
-            background-color: #f1f3e9;
+            background-color: #18c566;
             border-radius: 40px;
             font-weight: 600;
-            color: #2e7d32 !important;
+            color: #332e7d !important;
         }
         .btn-link-purple {
-            color: #7e22ce;
+            color: #070c57;
         }
         .table thead th {
-            background-color: #f4eef9;
+            background-color: #12d342;
             color: #2d3e2b;
         }
         h1, h2, h3, h4 {
@@ -132,8 +133,8 @@
     </div>
 
     <footer class="text-center py-4 mt-5 footer-custom">
-        <p class="mb-0 small">© 2026 AgriPriceHub - Islamic University in Uganda | Opio Joshua | Agricultural Price Transparency Platform</p>
-        <p class="mb-0 small">📞 Support Contact: +256 700 123 456 | agrihub@iuiu.ac.ug</p>
+        <p class="mb-0 small">© 2026 AgriPriceHub - IUIU | Opio Joshua | Agricultural Price Transparency Platform</p>
+        <p class="mb-0 small">📞 Support Contact: +256 783828810 | agrihub@iuiu.ac.ug</p>
     </footer>
 </div>
 
@@ -320,7 +321,7 @@
                 <div class="col-12">
                     <div class="card p-4 text-center shadow-sm border-0 bg-soft-green">
                         <h4><i class="fas fa-tractor me-2 text-success"></i> Welcome, ${currentUser?.fullName || 'Farmer'}!</h4>
-                        <p class="mb-0">Real-time market data, price trends & direct connections. 📍 Contact platform support: +256 700 123 456 | agrihub@iuiu.ac.ug</p>
+                        <p class="mb-0">Real-time market data, price trends & direct connections. 📍 Contact platform support:  +256 783828810| agrihub@iuiu.ac.ug</p>
                     </div>
                 </div>
             </div>
