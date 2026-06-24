@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>AgriPriceHub | Agricultural Price Transparency Platform</title>
+    <!-- Bootstrap 5 + Icons + Chart.js -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #e9f7e1 0%, #f5eef8 100%);
+            font-family: 'Segoe UI', 'Poppins', Roboto, sans-serif;
+        }
+        /* Light green, white & light purple theme */
+        .navbar, .card, .footer-custom {
+            background-color: #ffffff !important;
+        }
+        .navbar {
+            box-shadow: 0 4px 12px rgba(98, 0, 128, 0.05);
+            border-bottom: 2px solid #d8b4fe;
+        }
+        .navbar-brand {
+            color: #2e5c2e !important;
+            font-weight: 700;
+        }
+        .btn-success-custom {
+            background: linear-gradient(95deg, #2e7d32, #388e3c);
+            border: none;
+            color: white;
+        }
+        .btn-success-custom:hover {
+            background: #1b5e20;
+        }
+        .btn-outline-purple {
+            border-color: #c084fc;
+            color: #6b21a5;
+        }
+        .btn-outline-purple:hover {
+            background-color: #f3e8ff;
+            border-color: #a855f7;
+        }
+        .bg-soft-green {
+            background-color: #eaf7ea;
+        }
+        .badge-admin {
+            background: #9333ea;
+        }
+        .badge-farmer {
+            background: #2e7d32;
+        }
+        .badge-buyer {
+            background: #0284c7;
+        }
+        .price-card {
+            border-left: 5px solid #c084fc;
+            transition: transform 0.2s;
+        }
+        .price-card:hover {
+            transform: translateY(-5px);
+        }
+        footer {
+            background: #1e2a1e;
+            color: #ddd;
+            border-top: 1px solid #d9b8ff;
+        }
+        .center-container {
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        .card {
+            border-radius: 28px;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+        }
+        .tab-active {
+            background-color: #f1f3e9;
+            border-radius: 40px;
+            font-weight: 600;
+            color: #2e7d32 !important;
+        }
+        .btn-link-purple {
+            color: #7e22ce;
+        }
+        .table thead th {
+            background-color: #f4eef9;
+            color: #2d3e2b;
+        }
+        h1, h2, h3, h4 {
+            color: #1f3b1a;
+        }
+        /* center alignment for main content */
+        .page-content-wrapper {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+<div id="appRoot">
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-leaf text-success me-2"></i>AgriPriceHub
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0" id="navLinks"></ul>
+                <div class="d-flex gap-2 align-items-center" id="userInfoArea"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content (centered) -->
+    <div class="page-content-wrapper">
+        <div class="container center-container my-4 py-2" id="pageContent">
+            <div class="text-center p-5">Loading platform...</div>
+        </div>
+    </div>
+
+    <footer class="text-center py-4 mt-5 footer-custom">
+        <p class="mb-0 small">© 2026 AgriPriceHub - Islamic University in Uganda | Opio Joshua | Agricultural Price Transparency Platform</p>
+        <p class="mb-0 small">📞 Support Contact: +256 700 123 456 | agrihub@iuiu.ac.ug</p>
+    </footer>
+</div>
+
+<script>
+    // ----------------------------- STORAGE KEYS & INITIAL DATA ---------------------------------
+    const STORAGE_KEYS = {
+        USERS: 'agri_users_v2',
+        COMMODITIES: 'agri_commodities',
+        MARKETS: 'agri_markets',
+        CURRENT_PRICES: 'agri_current_prices',
+        PRICE_HISTORY: 'agri_price_history',
+        MARKETPLACE_LISTINGS: 'agri_listings'
+    };
+
+    function initData() {
+        if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
+            const users = [
+                { id: 'admin1', email: 'admin@agrihub.com', password: 'admin123', role: 'admin', fullName: 'System Admin', region: 'Kampala', contact: '+256701234567' },
+                { id: 'farmer1', email: 'farmer.james@example.com', password: 'farmer123', role: 'farmer', fullName: 'James Ochieng', region: 'Mbale', contact: '+256782345678' },
+                { id: 'buyer1', email: 'buyer.mercy@example.com', password: 'buyer123', role: 'buyer', fullName: 'Mercy Nakato', region: 'Jinja', contact: '+256792345679' }
+            ];
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+        }
+        if (!localStorage.getItem(STORAGE_KEYS.COMMODITIES)) {
+            const commodities = [
+                { id: 'c1', name: 'Maize (dry)', unit: 'kg' },
+                { id: 'c2', name: 'Beans (mixed)', unit: 'kg' },
+                { id: 'c3', name: 'Matooke (green)', unit: 'bunch' },
+                { id: 'c4', name: 'Coffee (Robusta)', unit: 'kg' },
+                { id: 'c5', name: 'Cassava (fresh)', unit: 'kg' }
+            ];
+            localStorage.setItem(STORAGE_KEYS.COMMODITIES, JSON.stringify(commodities));
+        }
+        if (!localStorage.getItem(STORAGE_KEYS.MARKETS)) {
+            const markets = [
+                { id: 'm1', name: 'Mbale Central Market', location: 'Mbale District' },
+                { id: 'm2', name: 'Jinja Main Market', location: 'Jinja City' },
+                { id: 'm3', name: 'Kampala Owino Market', location: 'Kampala' }
+            ];
+            localStorage.setItem(STORAGE_KEYS.MARKETS, JSON.stringify(markets));
+        }
+        if (!localStorage.getItem(STORAGE_KEYS.CURRENT_PRICES)) {
+            const prices = [
+                { id: 'p1', commodityId: 'c1', marketId: 'm1', price: 1800, lastUpdate: new Date().toISOString() },
+                { id: 'p2', commodityId: 'c1', marketId: 'm2', price: 1650, lastUpdate: new Date().toISOString() },
+                { id: 'p3', commodityId: 'c1', marketId: 'm3', price: 2000, lastUpdate: new Date().toISOString() },
+                { id: 'p4', commodityId: 'c2', marketId: 'm1', price: 3200, lastUpdate: new Date().toISOString() },
+                { id: 'p5', commodityId: 'c2', marketId: 'm2', price: 3000, lastUpdate: new Date().toISOString() },
+                { id: 'p6', commodityId: 'c2', marketId: 'm3', price: 3500, lastUpdate: new Date().toISOString() },
+                { id: 'p7', commodityId: 'c3', marketId: 'm1', price: 15000, lastUpdate: new Date().toISOString() },
+                { id: 'p8', commodityId: 'c3', marketId: 'm2', price: 14000, lastUpdate: new Date().toISOString() },
+                { id: 'p9', commodityId: 'c3', marketId: 'm3', price: 18000, lastUpdate: new Date().toISOString() },
+                { id: 'p10', commodityId: 'c4', marketId: 'm1', price: 5500, lastUpdate: new Date().toISOString() },
+                { id: 'p11', commodityId: 'c4', marketId: 'm2', price: 5200, lastUpdate: new Date().toISOString() },
+                { id: 'p12', commodityId: 'c4', marketId: 'm3', price: 6000, lastUpdate: new Date().toISOString() },
+                { id: 'p13', commodityId: 'c5', marketId: 'm1', price: 1200, lastUpdate: new Date().toISOString() },
+                { id: 'p14', commodityId: 'c5', marketId: 'm2', price: 1100, lastUpdate: new Date().toISOString() },
+                { id: 'p15', commodityId: 'c5', marketId: 'm3', price: 1400, lastUpdate: new Date().toISOString() }
+            ];
+            localStorage.setItem(STORAGE_KEYS.CURRENT_PRICES, JSON.stringify(prices));
+        }
+        if (!localStorage.getItem(STORAGE_KEYS.PRICE_HISTORY)) {
+            let history = [];
+            const currentPrices = JSON.parse(localStorage.getItem(STORAGE_KEYS.CURRENT_PRICES));
+            const dates = [new Date(Date.now() - 14*86400000), new Date(Date.now() - 7*86400000), new Date(Date.now() - 3*86400000)];
+            currentPrices.forEach(price => {
+                let base = price.price;
+                dates.forEach((date, idx) => {
+                    let variation = idx === 0 ? -200 : (idx===1 ? -100 : 60);
+                    let oldPrice = Math.max(300, base + variation);
+                    history.push({
+                        id: crypto.randomUUID ? crypto.randomUUID() : 'hist'+Math.random(),
+                        commodityId: price.commodityId,
+                        marketId: price.marketId,
+                        price: oldPrice,
+                        recordedDate: date.toISOString()
+                    });
+                });
+            });
+            localStorage.setItem(STORAGE_KEYS.PRICE_HISTORY, JSON.stringify(history));
+        }
+        if (!localStorage.getItem(STORAGE_KEYS.MARKETPLACE_LISTINGS)) {
+            const listings = [
+                { id: 'l1', userId: 'farmer1', userEmail: 'farmer.james@example.com', userName: 'James Ochieng', type: 'offer', commodity: 'Matooke', quantity: '50 bunches', price: '14500 per bunch', location: 'Mbale', contact: '+256782345678', date: new Date().toISOString() },
+                { id: 'l2', userId: 'farmer1', userEmail: 'farmer.james@example.com', userName: 'James Ochieng', type: 'offer', commodity: 'Maize', quantity: '800 kg', price: '1700/kg', location: 'Mbale', contact: '+256782345678', date: new Date().toISOString() },
+                { id: 'l3', userId: 'buyer1', userEmail: 'buyer.mercy@example.com', userName: 'Mercy Nakato', type: 'request', commodity: 'Coffee (Robusta)', quantity: '500 kg', price: '5700/kg', location: 'Jinja', contact: '+256792345679', date: new Date().toISOString() }
+            ];
+            localStorage.setItem(STORAGE_KEYS.MARKETPLACE_LISTINGS, JSON.stringify(listings));
+        }
+    }
+
+    function getUsers() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS)) || []; }
+    function getCommodities() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.COMMODITIES)); }
+    function getMarkets() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.MARKETS)); }
+    function getCurrentPrices() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.CURRENT_PRICES)); }
+    function getPriceHistory() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.PRICE_HISTORY)) || []; }
+    function getListings() { return JSON.parse(localStorage.getItem(STORAGE_KEYS.MARKETPLACE_LISTINGS)) || []; }
+    function saveUsers(users) { localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users)); }
+    function saveCurrentPrices(prices) { localStorage.setItem(STORAGE_KEYS.CURRENT_PRICES, JSON.stringify(prices)); }
+    function savePriceHistory(history) { localStorage.setItem(STORAGE_KEYS.PRICE_HISTORY, JSON.stringify(history)); }
+    function saveListings(listings) { localStorage.setItem(STORAGE_KEYS.MARKETPLACE_LISTINGS, JSON.stringify(listings)); }
+
+    let currentUser = null;
+    let activePage = 'dashboard';
+    let trendChartInstance = null;
+
+    // Helper to re-render nav & user area
+    function renderNavAndUser() {
+        const navLinks = document.getElementById('navLinks');
+        const userArea = document.getElementById('userInfoArea');
+        if (!currentUser) {
+            navLinks.innerHTML = '';
+            userArea.innerHTML = `<button class="btn btn-outline-success btn-sm me-2" onclick="showAuthForm('login')">Login</button>
+                                   <button class="btn btn-success btn-sm" onclick="showAuthForm('register')">Register</button>`;
+            return;
+        }
+        let menuItems = [];
+        if (currentUser.role === 'admin') {
+            menuItems = [
+                { id: 'dashboard', label: '📊 Admin Dashboard', icon: 'fa-chart-line' },
+                { id: 'managePrices', label: '💰 Manage Prices', icon: 'fa-edit' },
+                { id: 'priceComparison', label: '📈 Price Comparison', icon: 'fa-chart-simple' },
+                { id: 'historicalTrends', label: '📉 Historical Trends', icon: 'fa-chart-line' },
+                { id: 'marketplace', label: '🤝 Farmer-Buyer Connect', icon: 'fa-handshake' },
+                { id: 'manageUsers', label: '👥 Manage Users', icon: 'fa-users' }
+            ];
+        } else {
+            menuItems = [
+                { id: 'dashboard', label: '🏠 Dashboard', icon: 'fa-home' },
+                { id: 'priceComparison', label: '📊 Compare Prices', icon: 'fa-chart-simple' },
+                { id: 'historicalTrends', label: '📉 Price Trends', icon: 'fa-chart-line' },
+                { id: 'marketplace', label: '🤝 Connect / Listings', icon: 'fa-store' }
+            ];
+            if (currentUser.role === 'farmer') menuItems.push({ id: 'myListings', label: '🌾 My Offers', icon: 'fa-plus-circle' });
+            if (currentUser.role === 'buyer') menuItems.push({ id: 'myListings', label: '📋 My Requests', icon: 'fa-clipboard-list' });
+        }
+        navLinks.innerHTML = menuItems.map(item => `
+            <li class="nav-item">
+                <a class="nav-link ${activePage === item.id ? 'tab-active' : ''}" href="#" onclick="changePage('${item.id}'); return false;">
+                    <i class="fas ${item.icon} me-1"></i> ${item.label}
+                </a>
+            </li>
+        `).join('');
+        userArea.innerHTML = `
+            <div class="dropdown">
+                <button class="btn btn-outline-purple dropdown-toggle rounded-pill" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-user-circle"></i> ${currentUser.fullName.split(' ')[0]} (${currentUser.role})
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#" onclick="changePage('profile')"><i class="fas fa-id-card"></i> My Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                </ul>
+            </div>
+        `;
+    }
+
+    async function changePage(pageId) {
+        activePage = pageId;
+        renderNavAndUser();
+        if (!currentUser && pageId !== 'login' && pageId !== 'register') {
+            showAuthForm('login');
+            return;
+        }
+        if (pageId === 'dashboard') renderDashboard();
+        else if (pageId === 'managePrices' && currentUser?.role === 'admin') renderManagePrices();
+        else if (pageId === 'priceComparison') renderPriceComparison();
+        else if (pageId === 'historicalTrends') renderHistoricalTrends();
+        else if (pageId === 'marketplace') renderMarketplace();
+        else if (pageId === 'manageUsers' && currentUser?.role === 'admin') renderManageUsers();
+        else if (pageId === 'myListings') renderMyListings();
+        else if (pageId === 'profile') renderProfile();
+        else renderDashboard();
+    }
+
+    // DASHBOARD with contact info preview
+    function renderDashboard() {
+        const commodities = getCommodities();
+        const markets = getMarkets();
+        const prices = getCurrentPrices();
+        const latestPrices = prices.slice(0,6);
+        const html = `
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card p-4 text-center shadow-sm border-0 bg-soft-green">
+                        <h4><i class="fas fa-tractor me-2 text-success"></i> Welcome, ${currentUser?.fullName || 'Farmer'}!</h4>
+                        <p class="mb-0">Real-time market data, price trends & direct connections. 📍 Contact platform support: +256 700 123 456 | agrihub@iuiu.ac.ug</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4"><div class="card p-3 text-center price-card"><i class="fas fa-chart-line fs-1 text-purple"></i><h5>Live Prices</h5><p>Current rates from 3+ markets</p></div></div>
+                <div class="col-md-4"><div class="card p-3 text-center price-card"><i class="fas fa-handshake fs-1 text-primary"></i><h5>Direct Connect</h5><p>Chat / Call farmers & buyers</p></div></div>
+                <div class="col-md-4"><div class="card p-3 text-center price-card"><i class="fas fa-chart-simple fs-1 text-warning"></i><h5>Price Trends</h5><p>7-day historical analysis</p></div></div>
+            </div>
+            <h5 class="mt-4"><i class="fas fa-tag"></i> Recent Market Snapshot</h5>
+            <div class="table-responsive"><table class="table table-hover bg-white rounded-4 overflow-hidden"><thead class="table-light"><tr><th>Commodity</th><th>Market</th><th>Price (UGX)</th><th>Last Update</th></tr></thead><tbody>
+                ${latestPrices.map(p => {
+                    const commodity = commodities.find(c=>c.id===p.commodityId);
+                    const market = markets.find(m=>m.id===p.marketId);
+                    return `<tr><td>${commodity?.name||'N/A'}</td><td>${market?.name||'N/A'}</td><td class="fw-bold">UGX ${p.price.toLocaleString()}</td><td>${new Date(p.lastUpdate).toLocaleDateString()}</td></tr>`;
+                }).join('')}
+            </tbody></table></div>
+        `;
+        document.getElementById('pageContent').innerHTML = html;
+    }
+
+    // PRICE COMPARISON
+    function renderPriceComparison() {
+        const commodities = getCommodities();
+        const markets = getMarkets();
+        const prices = getCurrentPrices();
+        function buildTable(commodityId) {
+            const filtered = prices.filter(p => p.commodityId === commodityId);
+            if(filtered.length === 0) return '<tr><td colspan="3">No price data</td></tr>';
+            return filtered.map(p => {
+                const market = markets.find(m=>m.id===p.marketId);
+                return `<tr><td>${market?.name}</td><td class="fw-bold text-success">UGX ${p.price.toLocaleString()}</td><td>${new Date(p.lastUpdate).toLocaleDateString()}</td></tr>`;
+            }).join('');
+        }
+        const container = `
+            <h3><i class="fas fa-chart-simple"></i> Market Price Comparison</h3>
+            <div class="card p-4 mt-3">
+                <label class="fw-bold">Select Commodity:</label>
+                <select id="compareCommoditySelect" class="form-select w-50 mb-3">${commodities.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}</select>
+                <div class="table-responsive"><table class="table table-bordered bg-white align-middle"><thead><tr><th>Market</th><th>Current Price (UGX)</th><th>Last Update</th></tr></thead><tbody id="compareTableBody">${buildTable(commodities[0]?.id)}</tbody></table></div>
+                <div class="alert alert-info mt-2"><i class="fas fa-phone-alt"></i> Need to contact a seller? Visit the Marketplace tab.</div>
+            </div>
+        `;
+        document.getElementById('pageContent').innerHTML = container;
+        const select = document.getElementById('compareCommoditySelect');
+        if(select) select.addEventListener('change', (e) => {
+            const body = document.getElementById('compareTableBody');
+            const filtered = getCurrentPrices().filter(p => p.commodityId === e.target.value);
+            const marketsData = getMarkets();
+            body.innerHTML = filtered.map(p => `<tr><td>${marketsData.find(m=>m.id===p.marketId)?.name}</td><td class="fw-bold">UGX ${p.price.toLocaleString()}</td><td>${new Date(p.lastUpdate).toLocaleDateString()}</td></tr>`).join('');
+        });
+    }
+
+    // HISTORICAL TRENDS - FIXED with chart & proper data
+    function renderHistoricalTrends() {
+        const commodities = getCommodities();
+        const markets = getMarkets();
+        const html = `
+            <h3><i class="fas fa-chart-line"></i> Price Trend Analysis</h3>
+            <div class="row g-4">
+                <div class="col-md-5"><div class="card p-4"><label class="fw-bold">Commodity</label><select id="historyCommodity" class="form-select mb-3">${commodities.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select>
+                <label class="fw-bold">Market</label><select id="historyMarket" class="form-select mb-3">${markets.map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}</select>
+                <button class="btn btn-success w-100" id="loadHistoryBtn"><i class="fas fa-chart-line"></i> Load Trend</button>
+                <div class="mt-3 small text-muted"><i class="fas fa-info-circle"></i> Shows last 3 weeks + current price</div>
+                </div></div>
+                <div class="col-md-7"><div class="card p-3"><canvas id="trendCanvas" width="400" height="280" style="max-height:280px"></canvas></div></div>
+            </div>
+        `;
+        document.getElementById('pageContent').innerHTML = html;
+        const loadBtn = document.getElementById('loadHistoryBtn');
+        loadBtn.addEventListener('click', () => {
+            const commodityId = document.getElementById('historyCommodity').value;
+            const marketId = document.getElementById('historyMarket').value;
+            let history = getPriceHistory().filter(h => h.commodityId === commodityId && h.marketId === marketId);
+            const currentPriceEntry = getCurrentPrices().find(p => p.commodityId === commodityId && p.marketId === marketId);
+            if(currentPriceEntry) {
+                history.push({ price: currentPriceEntry.price, recordedDate: new Date().toISOString() });
+            }
+            if(history.length === 0) {
+                alert("No historical data for this selection yet. Try another commodity/market.");
+                return;
+            }
+            history.sort((a,b)=>new Date(a.recordedDate) - new Date(b.recordedDate));
+            const labels = history.map(h=>new Date(h.recordedDate).toLocaleDateString());
+            const dataPoints = history.map(h=>h.price);
+            if(trendChartInstance) trendChartInstance.destroy();
+            const ctx = document.getElementById('trendCanvas').getContext('2d');
+            trendChartInstance = new Chart(ctx, { 
+                type: 'line', 
+                data: { labels, datasets: [{ label: `Price (UGX)`, data: dataPoints, borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.05)', fill: true, tension: 0.2, pointBackgroundColor: '#2e7d32' }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: (ctx) => `UGX ${ctx.raw.toLocaleString()}` } } } }
+            });
+        });
+    }
+
+    // MARKETPLACE with visible contact (phone & email)
+    function renderMarketplace() {
+        let listings = getListings();
+        const html = `
+            <div class="d-flex justify-content-between align-items-center flex-wrap"><h3><i class="fas fa-handshake"></i> Farmer-Buyer Connection Hub</h3>
+            <button class="btn btn-success rounded-pill" onclick="showAddListingModal()"><i class="fas fa-plus"></i> New Listing</button></div>
+            <div class="row mt-4" id="marketplaceListingsGrid">
+                ${listings.map(l => `
+                    <div class="col-md-6 mb-4"><div class="card h-100 p-3 border-0 shadow-sm" style="border-top: 4px solid #c084fc;">
+                        <div class="d-flex justify-content-between"><span class="badge ${l.type === 'offer' ? 'bg-success' : 'bg-primary'} mb-2">${l.type === 'offer' ? '🌾 Farmer Offer' : '📢 Buyer Request'}</span></div>
+                        <h5 class="mt-1">${l.commodity}</h5>
+                        <p><i class="fas fa-user"></i> ${l.userName}<br><i class="fas fa-map-marker-alt"></i> ${l.location}<br><i class="fas fa-weight-hanging"></i> ${l.quantity} | ${l.price}<br><i class="fas fa-phone-alt text-success"></i> <strong>${l.contact || 'No phone'}</strong><br><i class="fas fa-envelope"></i> ${l.userEmail}</p>
+                        <div class="d-flex gap-2">
+                            <a href="mailto:${l.userEmail}?subject=Agricultural Inquiry - ${l.commodity}" class="btn btn-sm btn-outline-success"><i class="fas fa-envelope"></i> Email</a>
+                            ${l.contact ? `<a href="tel:${l.contact}" class="btn btn-sm btn-outline-primary"><i class="fas fa-phone-alt"></i> Call</a>` : ''}
+                            ${(currentUser.role === 'admin' || currentUser.id === l.userId) ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteListing('${l.id}')">Delete</button>` : ''}
+                        </div>
+                    </div></div>
+                `).join('')}
+            </div>
+        `;
+        document.getElementById('pageContent').innerHTML = html;
+    }
+
+    window.showAddListingModal = function() {
+        const type = prompt("Listing type: 'offer' (selling) or 'request' (buying)");
+        if(!['offer','request'].includes(type)) return alert("Invalid type");
+        const commodity = prompt("Commodity name (e.g., Maize, Beans)");
+        const quantity = prompt("Quantity & unit (e.g., 200kg)");
+        const price = prompt("Price details (e.g., 1500/kg)");
+        const location = prompt("Location (city/district)");
+        let contact = prompt("Your phone number for direct contact (optional)");
+        if(commodity && quantity && price && location) {
+            const listings = getListings();
+            const newId = 'l'+Date.now();
+            listings.push({
+                id: newId, userId: currentUser.id, userEmail: currentUser.email, userName: currentUser.fullName,
+                type, commodity, quantity, price, location, contact: contact || currentUser.contact || 'Not provided', date: new Date().toISOString()
+            });
+            saveListings(listings);
+            renderMarketplace();
+        } else alert("All fields required except phone");
+    };
+    window.deleteListing = function(listId){
+        let listings = getListings();
+        listings = listings.filter(l => l.id !== listId);
+        saveListings(listings);
+        renderMarketplace();
+    };
+
+    function renderMyListings() {
+        let listings = getListings().filter(l => l.userId === currentUser.id);
+        if(listings.length === 0) {
+            document.getElementById('pageContent').innerHTML = `<div class="card p-5 text-center"><h4>No listings yet</h4><button class="btn btn-success mt-2" onclick="showAddListingModal()">Create New ${currentUser.role === 'farmer' ? 'Offer' : 'Request'}</button></div>`;
+        } else {
+            const html = `<h3><i class="fas fa-list-ul"></i> My ${currentUser.role === 'farmer' ? 'Offers' : 'Requests'}</h3><div class="row">${listings.map(l => `
+                <div class="col-md-6 mb-3"><div class="card p-3"><strong>${l.commodity}</strong><br>${l.quantity} | ${l.price}<br>📞 ${l.contact}<br><button class="btn btn-sm btn-danger mt-2" onclick="deleteListing('${l.id}')">Remove</button></div></div>`).join('')}</div>`;
+            document.getElementById('pageContent').innerHTML = html;
+        }
+    }
+
+    // ADMIN: manage prices & users (keep existing)
+    function renderManagePrices() {
+        const commodities = getCommodities();
+        const markets = getMarkets();
+        let prices = getCurrentPrices();
+        const html = `<h3><i class="fas fa-coins"></i> Admin - Price Management</h3><div class="card p-4 mb-4"><h5>Update Commodity Price</h5><div class="row g-2"><div class="col-md-4"><select id="updateCommodity" class="form-select">${commodities.map(c=>`<option value="${c.id}">${c.name}</option>`)}</select></div>
+            <div class="col-md-4"><select id="updateMarket" class="form-select">${markets.map(m=>`<option value="${m.id}">${m.name}</option>`)}</select></div>
+            <div class="col-md-3"><input type="number" id="newPrice" placeholder="Price (UGX)" class="form-control"></div>
+            <div class="col-md-1"><button class="btn btn-success" id="submitPriceUpdate">Update</button></div></div></div>
+            <h5>Current Prices</h5><div class="table-responsive"><table class="table table-sm">${prices.map(p=>{let comm=commodities.find(c=>c.id===p.commodityId); let m=markets.find(mk=>mk.id===p.marketId); return `<tr><td>${comm?.name}</td><td>${m?.name}</td><td>UGX ${p.price}</td><td>${new Date(p.lastUpdate).toLocaleString()}</td></tr>`;}).join('')}</table></div>`;
+        document.getElementById('pageContent').innerHTML = html;
+        document.getElementById('submitPriceUpdate')?.addEventListener('click', () => {
+            const commodityId = document.getElementById('updateCommodity').value;
+            const marketId = document.getElementById('updateMarket').value;
+            const newPriceVal = parseFloat(document.getElementById('newPrice').value);
+            if(isNaN(newPriceVal)) return alert("Enter valid price");
+            let priceEntries = getCurrentPrices();
+            let priceEntry = priceEntries.find(p => p.commodityId === commodityId && p.marketId === marketId);
+            if(priceEntry) {
+                let history = getPriceHistory();
+                history.push({ id: crypto.randomUUID(), commodityId, marketId, price: priceEntry.price, recordedDate: new Date().toISOString() });
+                savePriceHistory(history);
+                priceEntry.price = newPriceVal;
+                priceEntry.lastUpdate = new Date().toISOString();
+                saveCurrentPrices(priceEntries);
+                alert("Price updated & history recorded");
+                renderManagePrices();
+            } else alert("Entry missing");
+        });
+    }
+    function renderManageUsers() {
+        let users = getUsers();
+        const html = `<h3>Manage Users</h3><table class="table table-bordered bg-white">${users.map(u=>`<tr><td>${u.email}</td><td>${u.role}</td><td>${u.fullName}</td><td>${u.contact || 'N/A'}</td><td><button class="btn btn-sm btn-danger" onclick="deleteUser('${u.id}')">Delete</button></td></tr>`).join('')}</table>`;
+        document.getElementById('pageContent').innerHTML = html;
+    }
+    window.deleteUser = function(uid) {
+        let users = getUsers();
+        if(uid === currentUser.id) return alert("Cannot delete self");
+        users = users.filter(u=>u.id !== uid);
+        saveUsers(users);
+        renderManageUsers();
+    };
+    function renderProfile() {
+        document.getElementById('pageContent').innerHTML = `<div class="card p-4 mx-auto" style="max-width:500px"><h4>My Profile</h4><p><strong>Name:</strong> ${currentUser.fullName}</p><p><strong>Email:</strong> ${currentUser.email}</p><p><strong>Role:</strong> ${currentUser.role}</p><p><strong>Phone:</strong> ${currentUser.contact || 'Not provided'}</p><p><strong>Region:</strong> ${currentUser.region || 'Eastern Uganda'}</p><button class="btn btn-sm btn-outline-success" onclick="alert('Contact admin to update profile')">Edit (demo)</button></div>`;
+    }
+
+    // SEPARATED LOGIN with toggle: Admin / User (farmer/buyer)
+    window.showAuthForm = function(formType) {
+        const container = document.getElementById('pageContent');
+        if(formType === 'login') {
+            container.innerHTML = `
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <div class="card p-4 text-center">
+                            <h4 class="mb-3"><i class="fas fa-sign-in-alt"></i> Access Platform</h4>
+                            <div class="btn-group w-100 mb-4" role="group">
+                                <button class="btn btn-outline-success active" id="userLoginTab">👨🌾 Farmer / Buyer Login</button>
+                                <button class="btn btn-outline-purple" id="adminLoginTab">👑 Admin Login</button>
+                            </div>
+                            <div id="loginDynamicForm">
+                                <input type="email" id="loginEmail" class="form-control mb-2" placeholder="Email (farmer/buyer)">
+                                <input type="password" id="loginPassword" class="form-control mb-2" placeholder="Password">
+                                <button class="btn btn-success w-100" onclick="doLogin('user')">Sign In as Farmer/Buyer</button>
+                            </div>
+                            <div class="mt-3 text-muted small"><i class="fas fa-key"></i> Demo: farmer.james@example.com / farmer123 & buyer.mercy@example.com / buyer123</div>
+                        </div>
+                    </div>
+                </div>`;
+            document.getElementById('adminLoginTab')?.addEventListener('click', () => {
+                document.getElementById('loginDynamicForm').innerHTML = `
+                    <input type="email" id="loginEmail" class="form-control mb-2" placeholder="Admin Email (admin@agrihub.com)">
+                    <input type="password" id="loginPassword" class="form-control mb-2" placeholder="Password (admin123)">
+                    <button class="btn btn-purple w-100" style="background:#7e22ce;color:white" onclick="doLogin('admin')">Admin Login</button>
+                `;
+                document.getElementById('userLoginTab').classList.remove('active');
+                document.getElementById('adminLoginTab').classList.add('active');
+            });
+            document.getElementById('userLoginTab')?.addEventListener('click', () => {
+                document.getElementById('loginDynamicForm').innerHTML = `
+                    <input type="email" id="loginEmail" class="form-control mb-2" placeholder="Farmer/Buyer Email">
+                    <input type="password" id="loginPassword" class="form-control mb-2" placeholder="Password">
+                    <button class="btn btn-success w-100" onclick="doLogin('user')">Sign In as Farmer/Buyer</button>
+                `;
+                document.getElementById('adminLoginTab').classList.remove('active');
+                document.getElementById('userLoginTab').classList.add('active');
+            });
+        } else {
+            container.innerHTML = `<div class="row justify-content-center"><div class="col-md-5"><div class="card p-4"><h4>Register as Farmer/Buyer</h4><input id="regName" placeholder="Full Name" class="form-control mb-2"><input id="regEmail" placeholder="Email" class="form-control mb-2"><input id="regPass" placeholder="Password" type="password" class="form-control mb-2"><input id="regPhone" placeholder="Phone number (optional)" class="form-control mb-2"><select id="regRole" class="form-select mb-2"><option value="farmer">Farmer</option><option value="buyer">Buyer</option></select><button class="btn btn-success" onclick="doRegister()">Register</button></div></div></div>`;
+        }
+    };
+    window.doLogin = function(roleType) {
+        const email = document.getElementById('loginEmail').value;
+        const pass = document.getElementById('loginPassword').value;
+        const users = getUsers();
+        let user = null;
+        if(roleType === 'admin') user = users.find(u => u.email === email && u.password === pass && u.role === 'admin');
+        else user = users.find(u => u.email === email && u.password === pass && (u.role === 'farmer' || u.role === 'buyer'));
+        if(user) { currentUser = user; renderNavAndUser(); changePage('dashboard'); }
+        else alert("Invalid credentials or role mismatch");
+    };
+    window.doRegister = function() {
+        const fullName = document.getElementById('regName').value;
+        const email = document.getElementById('regEmail').value;
+        const pass = document.getElementById('regPass').value;
+        const role = document.getElementById('regRole').value;
+        const phone = document.getElementById('regPhone').value;
+        if(!fullName||!email||!pass) return alert("Fill required fields");
+        const users = getUsers();
+        if(users.find(u=>u.email===email)) return alert("Email exists");
+        const newUser = { id: 'u'+Date.now(), email, password: pass, role, fullName, region: 'Uganda', contact: phone || '' };
+        users.push(newUser);
+        saveUsers(users);
+        currentUser = newUser;
+        renderNavAndUser();
+        changePage('dashboard');
+    };
+    window.logout = function() { currentUser = null; renderNavAndUser(); showAuthForm('login'); };
+
+    initData();
+    renderNavAndUser();
+    showAuthForm('login');
+    window.changePage = changePage;
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
